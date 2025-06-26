@@ -1,6 +1,5 @@
 import ray
 from functools import reduce
-
 ray.init(ignore_reinit_error=True)
 
 class RayRDD:
@@ -33,10 +32,21 @@ class RayRDD:
         return sum(len(chunk) for chunk in ray.get(self.data_refs))
 
 
+
 class RayContext:
-    def __init__(self, num_splits=4):
-        print("Initialized RayContext")
+    def __init__(self, address=None, num_splits=4, **kwargs):
+        """
+        :param address: Ray cluster address (e.g. 'auto' or '192.168.1.10:6379')
+        :param num_splits: Number of partitions to split data into
+        :param kwargs: Passed to ray.init()
+        """
+        self.address = address
         self.num_splits = num_splits
+
+        if not ray.is_initialized():
+            ray.init(address=self.address, **kwargs)
+
+        print(f"Initialized RayContext (address={self.address or 'local'})")
 
     def parallelize(self, data):
         chunk_size = max(1, len(data) // self.num_splits)
